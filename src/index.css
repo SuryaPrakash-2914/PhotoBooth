@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply font-display antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brand-primary hover:bg-brand-accent active:scale-95 
+           text-white font-bold text-2xl px-12 py-6 rounded-2xl 
+           shadow-lg transition-all duration-200 
+           min-h-[80px] min-w-[200px] touch-manipulation;
+  }
+
+  .btn-secondary {
+    @apply bg-slate-700 hover:bg-slate-600 active:scale-95 
+           text-white font-semibold text-xl px-8 py-4 rounded-xl 
+           transition-all duration-200 min-h-[64px] touch-manipulation;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent border-2 border-white/30 hover:border-white/60 
+           text-white font-semibold text-xl px-8 py-4 rounded-xl 
+           transition-all duration-200 min-h-[64px] touch-manipulation;
+  }
+
+  .card {
+    @apply bg-slate-800/80 backdrop-blur-sm rounded-3xl p-8 
+           border border-white/10 shadow-xl;
+  }
+
+  .card-selected {
+    @apply ring-4 ring-brand-primary border-brand-primary;
+  }
+}
+
+/* Fullscreen kiosk helpers */
+.kiosk-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}

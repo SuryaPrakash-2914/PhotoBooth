@@ -1,0 +1,38 @@
+[
+  {
+    "id": "pose-4-2x6",
+    "name": "4 Pose – 2×6",
+    "poses": 4,
+    "paperSize": "2x6",
+    "price": 150,
+    "layout": "vertical-4",
+    "description": "Four photos stacked vertically on 2×6 strip"
+  },
+  {
+    "id": "pose-2-4x6",
+    "name": "2 Pose – 4×6",
+    "poses": 2,
+    "paperSize": "4x6",
+    "price": 120,
+    "layout": "vertical-2",
+    "description": "Two photos on classic 4×6"
+  },
+  {
+    "id": "pose-1-4x6",
+    "name": "1 Pose – 4×6",
+    "poses": 1,
+    "paperSize": "4x6",
+    "price": 100,
+    "layout": "single",
+    "description": "Single high-quality 4×6 print"
+  },
+  {
+    "id": "passport",
+    "name": "Passport",
+    "poses": 1,
+    "paperSize": "passport",
+    "price": 80,
+    "layout": "passport",
+    "description": "Official passport size photo"
+  }
+]

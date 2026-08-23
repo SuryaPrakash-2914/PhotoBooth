@@ -1,0 +1,30 @@
+{
+  "brandName": "NANAGRAPHY",
+  "brandTagline": "Capture Moments",
+  "currency": "₹",
+  "sessionTimeoutSeconds": 300,
+  "countdownSeconds": 3,
+  "defaultQuantity": 1,
+  "maxQuantity": 10,
+  "kioskMode": true,
+  "fullscreen": true,
+  "autoReturnHome": true,
+  "language": "en",
+  "theme": {
+    "primaryColor": "#E11D48",
+    "backgroundColor": "#0F172A"
+  },
+  "camera": {
+    "mockMode": true,
+    "preferredBrand": "Canon"
+  },
+  "printer": {
+    "mockMode": true,
+    "defaultPrinter": ""
+  },
+  "payment": {
+    "mockMode": true,
+    "provider": "upi",
+    "merchantName": "NANAGRAPHY Photo Booth"
+  }
+}
