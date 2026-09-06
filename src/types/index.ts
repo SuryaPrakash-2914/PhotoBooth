@@ -18,6 +18,16 @@ export interface CapturedPhoto {
 }
 
 export type PaymentStatus = 'idle' | 'pending' | 'success' | 'failed';
+export interface PaymentRecord {
+  orderId: string;
+  amount: number;
+  status: 'pending' | 'success' | 'failed';
+  transactionId?: string;
+  payerUpiName?: string;
+  merchantName: string;
+  createdAt: string;
+  updatedAt: string;
+}
 export type PrintingStatus = 'idle' | 'printing' | 'success' | 'failed';
 export type AppScreen =
   | 'home'
@@ -77,7 +87,12 @@ export interface AppSettings {
     mockMode: boolean;
     provider: string;
     merchantName: string;
+    merchantVpa?: string;
   };
+  adminPin?: string;
+  qrScanner?: { enabled: boolean; deviceName: string };
+  frames?: { customFrame: string; defaultFrame: string };
+  effects?: { enabled: boolean; available: string };
 }
 
 export interface PaymentResult {

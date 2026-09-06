@@ -14,6 +14,7 @@ export default function Camera() {
   const [liveFrame, setLiveFrame] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const liveViewTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const nextCaptureTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalPoses = session?.selectedPhotoType?.poses ?? 1;
   const currentPose = session?.currentPose ?? 1;
@@ -40,6 +41,7 @@ export default function Camera() {
     return () => {
       cancelled = true;
       window.api.camera.disconnect();
+      if (nextCaptureTimer.current) clearTimeout(nextCaptureTimer.current);
     };
   }, []);
 
@@ -85,30 +87,29 @@ export default function Camera() {
           timestamp: new Date().toISOString(),
         };
         addCapturedPhoto(photo);
-        setCapturedPreview(photo.thumbnail || null);
-        setCameraState('captured');
+        if (currentPose >= totalPoses) {
+          setCapturedPreview(photo.thumbnail || null);
+          setCameraState('captured');
+          nextCaptureTimer.current = setTimeout(() => navigate('/edit'), 900);
+        } else {
+          setCurrentPose(currentPose + 1);
+          setCapturedPreview(null);
+          setCountdown(3);
+          nextCaptureTimer.current = setTimeout(() => setCameraState('countdown'), 900);
+        }
       })();
       return;
     }
 
     const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
-  }, [cameraState, countdown, currentPose, addCapturedPhoto, session]);
+  }, [cameraState, countdown, currentPose, totalPoses, addCapturedPhoto, setCurrentPose, navigate, session]);
 
   const handleRetake = () => {
+    if (nextCaptureTimer.current) clearTimeout(nextCaptureTimer.current);
     setCapturedPreview(null);
     setErrorMessage(null);
     setCameraState('preview');
-  };
-
-  const handleNext = () => {
-    if (currentPose < totalPoses) {
-      setCurrentPose(currentPose + 1);
-      setCapturedPreview(null);
-      setCameraState('preview');
-    } else {
-      navigate('/edit');
-    }
   };
 
   if (!session) return null;
@@ -193,9 +194,6 @@ export default function Camera() {
           <div className="flex justify-center gap-8">
             <button onClick={handleRetake} className="btn-secondary min-w-[180px]">
               RETAKE
-            </button>
-            <button onClick={handleNext} className="btn-primary min-w-[180px]">
-              {currentPose < totalPoses ? 'NEXT POSE' : 'DONE'}
             </button>
           </div>
         )}

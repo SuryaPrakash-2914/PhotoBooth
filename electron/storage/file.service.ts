@@ -6,6 +6,7 @@
 import path from 'path';
 import fs from 'fs';
 import { app } from 'electron';
+import type { PaymentRecord } from '../payment/payment.types';
 
 export class FileService {
   private getBaseDir() {
@@ -18,6 +19,34 @@ export class FileService {
 
   getLogsDir() {
     return path.join(this.getBaseDir(), 'logs');
+  }
+
+  private getPaymentsPath() {
+    return path.join(this.getBaseDir(), 'payments.json');
+  }
+
+  getPaymentHistory(): PaymentRecord[] {
+    const paymentsPath = this.getPaymentsPath();
+    if (!fs.existsSync(paymentsPath)) return [];
+    try {
+      return JSON.parse(fs.readFileSync(paymentsPath, 'utf-8')) as PaymentRecord[];
+    } catch {
+      return [];
+    }
+  }
+
+  savePayment(record: PaymentRecord): void {
+    const paymentsPath = this.getPaymentsPath();
+    fs.mkdirSync(this.getBaseDir(), { recursive: true });
+    fs.writeFileSync(paymentsPath, JSON.stringify([record, ...this.getPaymentHistory()], null, 2), 'utf-8');
+  }
+
+  updatePayment(orderId: string, update: Partial<PaymentRecord>): void {
+    const records = this.getPaymentHistory().map((record) =>
+      record.orderId === orderId ? { ...record, ...update, updatedAt: new Date().toISOString() } : record
+    );
+    fs.mkdirSync(this.getBaseDir(), { recursive: true });
+    fs.writeFileSync(this.getPaymentsPath(), JSON.stringify(records, null, 2), 'utf-8');
   }
 
   async createSessionFolder(sessionId: string): Promise<string> {

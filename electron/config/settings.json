@@ -10,6 +10,7 @@
   "fullscreen": true,
   "autoReturnHome": true,
   "language": "en",
+  "adminPin": "1234",
   "theme": {
     "primaryColor": "#E11D48",
     "backgroundColor": "#0F172A"

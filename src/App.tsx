@@ -7,6 +7,7 @@ import Preview from './pages/Preview';
 import Payment from './pages/Payment';
 import Printing from './pages/Printing';
 import Complete from './pages/Complete';
+import Admin from './pages/Admin';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/payment" element={<Payment />} />
           <Route path="/printing" element={<Printing />} />
           <Route path="/complete" element={<Complete />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

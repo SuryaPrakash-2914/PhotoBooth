@@ -10,10 +10,22 @@ export interface CreateOrderResult {
 
 export type PaymentState = 'pending' | 'success' | 'failed';
 
+export interface PaymentRecord {
+  orderId: string;
+  amount: number;
+  status: PaymentState;
+  transactionId?: string;
+  payerUpiName?: string;
+  merchantName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface StatusResult {
   success: boolean;
   status: PaymentState;
   transactionId?: string;
+  payerUpiName?: string;
   error?: string;
 }
 

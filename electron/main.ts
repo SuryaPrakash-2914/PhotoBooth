@@ -8,6 +8,7 @@ import { fileService } from './storage/file.service';
 import type { CameraConfig } from './camera/camera.types';
 import type { PrinterConfig } from './printer/printer.types';
 import type { PaymentConfig } from './payment/payment.types';
+import type { PaymentRecord } from './payment/payment.types';
 
 // Keep a global reference
 let mainWindow: BrowserWindow | null = null;
@@ -128,6 +129,31 @@ ipcMain.handle('config:getSettings', async () => {
   }
 });
 
+ipcMain.handle('config:updateSettings', async (_event, nextSettings: Settings) => {
+  try {
+    const configPath = getConfigPath('settings.json');
+    fs.writeFileSync(configPath, JSON.stringify(nextSettings, null, 2), 'utf-8');
+    initCameraService(nextSettings.camera);
+    initPrinterService(nextSettings.printer);
+    initPaymentService(nextSettings.payment);
+    return { success: true };
+  } catch (err: any) {
+    console.error('Failed to save settings.json', err);
+    return { success: false, error: err?.message ?? 'Failed to save settings' };
+  }
+});
+
+ipcMain.handle('config:backup', async () => {
+  try {
+    const source = getConfigPath('settings.json');
+    const backupPath = `${source}.${Date.now()}.backup`;
+    fs.copyFileSync(source, backupPath);
+    return { success: true, path: backupPath };
+  } catch (err: any) {
+    return { success: false, error: err?.message ?? 'Failed to create backup' };
+  }
+});
+
 // Camera
 ipcMain.handle('camera:connect', async () => {
   if (!cameraService) return { success: false, message: 'Camera service not initialized' };
@@ -179,13 +205,43 @@ ipcMain.handle(
   }
 );
 
+ipcMain.handle('printer:testPrint', async () => {
+  if (!printerService) return { success: false, error: 'Printer service not initialized' };
+  return printerService.print('mock://admin-test-print', 1, '4x6');
+});
+
 // Payment
 ipcMain.handle('payment:create', async (_event, amount: number) => {
   if (!paymentService) return { success: false, error: 'Payment service not initialized' };
-  return paymentService.createOrder(amount);
+  const result = await paymentService.createOrder(amount);
+  if (result.success && result.orderId) {
+    const settings = loadSettings();
+    const now = new Date().toISOString();
+    const record: PaymentRecord = {
+      orderId: result.orderId,
+      amount,
+      status: 'pending',
+      merchantName: settings.payment.merchantName,
+      payerUpiName: settings.payment.mockMode ? 'Test payment (mock)' : 'Not provided by QR',
+      createdAt: now,
+      updatedAt: now,
+    };
+    fileService.savePayment(record);
+  }
+  return result;
 });
 
 ipcMain.handle('payment:checkStatus', async (_event, orderId: string) => {
   if (!paymentService) return { success: false, status: 'failed', error: 'Payment service not initialized' };
-  return paymentService.checkStatus(orderId);
+  const result = await paymentService.checkStatus(orderId);
+  if (result.success && result.status !== 'pending') {
+    fileService.updatePayment(orderId, {
+      status: result.status,
+      transactionId: result.transactionId,
+      ...(result.payerUpiName ? { payerUpiName: result.payerUpiName } : {}),
+    });
+  }
+  return result;
 });
+
+ipcMain.handle('payment:getHistory', async () => fileService.getPaymentHistory());

@@ -9,6 +9,8 @@ const api = {
   config: {
     getPhotoTypes: () => ipcRenderer.invoke('config:getPhotoTypes'),
     getSettings: () => ipcRenderer.invoke('config:getSettings'),
+    updateSettings: (settings: Record<string, unknown>) => ipcRenderer.invoke('config:updateSettings', settings),
+    backup: () => ipcRenderer.invoke('config:backup'),
   },
 
   // Camera
@@ -32,12 +34,14 @@ const api = {
     getPrinters: () => ipcRenderer.invoke('printer:getPrinters'),
     print: (filePath: string, copies: number, paperSize?: string) =>
       ipcRenderer.invoke('printer:print', filePath, copies, paperSize),
+    testPrint: () => ipcRenderer.invoke('printer:testPrint'),
   },
 
   // Payment
   payment: {
     create: (amount: number) => ipcRenderer.invoke('payment:create', amount),
     checkStatus: (orderId: string) => ipcRenderer.invoke('payment:checkStatus', orderId),
+    getHistory: () => ipcRenderer.invoke('payment:getHistory'),
   },
 };
 

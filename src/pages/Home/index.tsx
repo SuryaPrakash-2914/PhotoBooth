@@ -1,13 +1,30 @@
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessionStore } from '../../store/sessionStore';
 
 export default function Home() {
   const navigate = useNavigate();
   const createSession = useSessionStore((s) => s.createSession);
+  const logoClicks = useRef(0);
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleStart = () => {
     createSession();
     navigate('/photo-type');
+  };
+
+  useEffect(() => () => {
+    if (clickTimer.current) clearTimeout(clickTimer.current);
+  }, []);
+
+  const handleBrandClick = () => {
+    logoClicks.current += 1;
+    if (clickTimer.current) clearTimeout(clickTimer.current);
+    clickTimer.current = setTimeout(() => { logoClicks.current = 0; }, 1800);
+    if (logoClicks.current === 5) {
+      logoClicks.current = 0;
+      navigate('/admin');
+    }
   };
 
   return (
@@ -21,14 +38,14 @@ export default function Home() {
 
       <div className="relative z-10 flex flex-col items-center gap-16 px-8 text-center">
         {/* Brand */}
-        <div className="space-y-4">
+        <button type="button" aria-label="Brand" onClick={handleBrandClick} className="space-y-4 bg-transparent text-center">
           <h1 className="text-7xl md:text-8xl font-black tracking-tight text-white drop-shadow-2xl">
             NANAGRAPHY
           </h1>
           <p className="text-2xl md:text-3xl text-white/70 font-light tracking-wide">
             Capture Moments
           </p>
-        </div>
+        </button>
 
         {/* Start Button */}
         <button
