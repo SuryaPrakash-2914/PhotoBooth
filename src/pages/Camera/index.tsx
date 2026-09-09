@@ -18,6 +18,7 @@ export default function Camera() {
 
   const totalPoses = session?.selectedPhotoType?.poses ?? 1;
   const currentPose = session?.currentPose ?? 1;
+  const capturedPhotos = session?.capturedPhotos ?? [];
 
   useEffect(() => {
     if (!session?.selectedPhotoType) {
@@ -114,89 +115,148 @@ export default function Camera() {
 
   if (!session) return null;
 
+  const canCapture = cameraState === 'preview';
+  const showLiveOverlay =
+    cameraState === 'preview' || cameraState === 'countdown' || cameraState === 'capturing';
+
   return (
-    <div className="w-full h-full flex flex-col bg-black">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent">
-        <div className="text-white/80 text-xl font-medium">
+    <div className="w-full h-full flex flex-col bg-[#0b0b0d] text-white">
+      {/* Top bar */}
+      <div className="flex items-center gap-4 px-6 py-5 border-b border-white/10 shrink-0">
+        <button
+          onClick={() => navigate('/photo-type')}
+          className="text-white/70 hover:text-white transition-colors text-xl leading-none"
+          aria-label="Back"
+        >
+          ‹
+        </button>
+        <h3 className="font-serif text-lg tracking-wide text-white/90">
           Pose {currentPose} of {totalPoses}
-        </div>
-        <div className="text-white/60 text-lg">{session.selectedPhotoType?.name}</div>
+        </h3>
       </div>
 
-      {/* Camera Preview Area */}
-      <div className="flex-1 relative flex items-center justify-center">
-        {cameraState === 'connecting' && (
-          <div className="text-center space-y-4">
-            <div className="w-12 h-12 mx-auto border-4 border-white/20 border-t-white rounded-full animate-spin" />
-            <p className="text-white/50 text-xl">Connecting to camera…</p>
-          </div>
-        )}
-
-        {cameraState === 'preview' &&
-          (liveFrame ? (
-            <img src={liveFrame} alt="Live camera feed" className="w-full h-full object-contain" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-              <div className="text-center space-y-6">
-                <div className="w-32 h-32 mx-auto rounded-full border-4 border-white/20 flex items-center justify-center">
-                  <span className="text-5xl">📷</span>
-                </div>
-                <p className="text-white/50 text-2xl">Ready</p>
+      {/* Body: live view + sidebar */}
+      <div className="flex-1 flex min-h-0">
+        {/* Live preview */}
+        <div className="flex-1 relative overflow-hidden bg-gradient-to-br from-slate-900 to-[#0b0b0d]">
+          {cameraState === 'connecting' && (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 mx-auto border-4 border-white/20 border-t-amber-400 rounded-full animate-spin" />
+                <p className="text-white/50 text-lg">Connecting to camera…</p>
               </div>
             </div>
-          ))}
+          )}
 
-        {(cameraState === 'countdown' || cameraState === 'capturing') && (
-          <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-30">
-            <div className="text-[180px] font-black text-white animate-pulse drop-shadow-2xl">
-              {cameraState === 'countdown' && countdown > 0 ? countdown : '✓'}
+          {showLiveOverlay && (
+            <>
+              {liveFrame && (
+                <img src={liveFrame} alt="Live camera feed" className="w-full h-full object-cover" />
+              )}
+
+              {/* LIVE badge */}
+              <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-rose-600/90 text-white text-xs font-semibold uppercase tracking-wider px-3 py-1.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                Live
+              </div>
+
+              {/* Face-guide frame — empty, no icon/label inside */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 border-2 border-amber-400/70 rounded-lg pointer-events-none" />
+            </>
+          )}
+
+          {(cameraState === 'countdown' || cameraState === 'capturing') && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-30">
+              <div className="font-serif text-[140px] font-bold text-amber-400 drop-shadow-[0_0_30px_rgba(245,180,66,0.4)]">
+                {cameraState === 'countdown' && countdown > 0 ? countdown : '✓'}
+              </div>
+            </div>
+          )}
+
+          {cameraState === 'captured' && capturedPreview && (
+            <div className="w-full h-full flex items-center justify-center bg-black">
+              <img
+                src={capturedPreview}
+                alt={`Pose ${currentPose}`}
+                className="max-w-full max-h-full object-contain"
+              />
+            </div>
+          )}
+
+          {cameraState === 'error' && (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-center space-y-4 px-8">
+                <p className="text-red-400 text-xl">{errorMessage || 'Camera error'}</p>
+                <button
+                  onClick={handleRetake}
+                  className="px-6 py-3 rounded-full border border-white/15 bg-white/[0.05] hover:bg-white/[0.1] transition-colors"
+                >
+                  TRY AGAIN
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="w-[300px] shrink-0 border-l border-white/10 flex flex-col">
+          <div className="px-6 pt-6">
+            <p className="text-white/40 text-xs font-semibold tracking-widest uppercase">
+              Captured
+            </p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="grid grid-cols-2 gap-3">
+              {Array.from({ length: totalPoses }, (_, i) => i + 1).map((poseNum) => {
+                const photo = capturedPhotos.find((p) => p.poseIndex === poseNum);
+                const isCurrent = poseNum === currentPose && !photo;
+                return (
+                  <div
+                    key={poseNum}
+                    className={`aspect-square rounded-xl border flex items-center justify-center overflow-hidden bg-black/40
+                      ${isCurrent ? 'border-amber-400/70' : 'border-white/10'}`}
+                  >
+                    {photo?.thumbnail ? (
+                      <img
+                        src={photo.thumbnail}
+                        alt={`Pose ${poseNum}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="font-serif text-2xl text-white/25">{poseNum}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
-        )}
 
-        {cameraState === 'captured' && capturedPreview && (
-          <div className="w-full h-full flex items-center justify-center bg-black">
-            <img
-              src={capturedPreview}
-              alt={`Pose ${currentPose}`}
-              className="max-w-full max-h-full object-contain"
-            />
+          {/* Action button */}
+          <div className="p-6 border-t border-white/10">
+            {cameraState === 'captured' ? (
+              <button
+                onClick={handleRetake}
+                className="w-full py-3 rounded-full font-semibold border border-white/15 bg-white/[0.05] hover:bg-white/[0.1] transition-colors"
+              >
+                RETAKE
+              </button>
+            ) : (
+              <button
+                onClick={startCountdown}
+                disabled={!canCapture}
+                className={`w-full py-3 rounded-full font-semibold tracking-wide transition-colors
+                  ${
+                    canCapture
+                      ? 'bg-amber-400 text-black hover:bg-amber-300'
+                      : 'bg-white/10 text-white/30 cursor-not-allowed'
+                  }`}
+              >
+                CAPTURE
+              </button>
+            )}
           </div>
-        )}
-
-        {cameraState === 'error' && (
-          <div className="text-center space-y-4 px-8">
-            <p className="text-red-400 text-2xl">{errorMessage || 'Camera error'}</p>
-            <button onClick={handleRetake} className="btn-secondary">
-              TRY AGAIN
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Controls */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 p-8 bg-gradient-to-t from-black/90 to-transparent">
-        {cameraState === 'preview' && (
-          <div className="flex justify-center">
-            <button
-              onClick={startCountdown}
-              className="w-28 h-28 rounded-full bg-brand-primary hover:bg-brand-accent 
-                         flex items-center justify-center text-5xl shadow-2xl shadow-brand-primary/50
-                         active:scale-90 transition-transform"
-            >
-              📷
-            </button>
-          </div>
-        )}
-
-        {cameraState === 'captured' && (
-          <div className="flex justify-center gap-8">
-            <button onClick={handleRetake} className="btn-secondary min-w-[180px]">
-              RETAKE
-            </button>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
