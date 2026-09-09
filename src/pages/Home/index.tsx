@@ -10,6 +10,10 @@ export default function Home() {
     navigate('/photo-type');
   };
 
+  const handleOpenAdmin = () => {
+    navigate('/admin');
+  };
+
   return (
     <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden bg-[#0a0908]">
       {/* Subtle vignette / ambient glow */}
@@ -19,7 +23,12 @@ export default function Home() {
 
       <div className="relative z-10 flex flex-col items-center gap-6 px-8 text-center">
         {/* Camera icon badge */}
-        <div className="w-24 h-24 rounded-3xl bg-[#d4a94a] flex items-center justify-center shadow-[0_0_40px_rgba(212,169,74,0.35)]">
+        <button
+          type="button"
+          onClick={handleOpenAdmin}
+          aria-label="Open admin panel"
+          className="w-24 h-24 rounded-3xl bg-[#d4a94a] flex items-center justify-center shadow-[0_0_40px_rgba(212,169,74,0.35)] transition-transform duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -33,17 +42,22 @@ export default function Home() {
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z" />
             <circle cx="12" cy="13" r="4" />
           </svg>
-        </div>
+        </button>
 
         {/* Brand */}
-        <div className="space-y-2">
+        <button
+          type="button"
+          onClick={handleOpenAdmin}
+          aria-label="Open admin panel"
+          className="space-y-2 cursor-pointer transition-opacity duration-200 hover:opacity-90 active:opacity-80"
+        >
           <h1 className="text-6xl md:text-7xl font-serif font-bold tracking-tight text-[#f5f0e8]">
             NANAGRAPHY
           </h1>
           <p className="text-sm md:text-base tracking-[0.35em] text-[#8a8378] font-light uppercase">
             Photo Booth
           </p>
-        </div>
+        </button>
 
         {/* Status indicators */}
         <div className="flex items-center gap-6 mt-2 text-sm text-[#a8a196]">

@@ -52,11 +52,18 @@ const NAV_ITEMS: { id: TabId; label: string; icon: typeof LayoutDashboard }[] = 
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
-function Field({ label, value, onChange, type = 'text' }: { label: string; value: string | number; onChange: (value: string) => void; type?: string }) {
+function Field({ label, value, onChange, type = 'text', maxLength }: { label: string; value: string | number; onChange: (value: string) => void; type?: string; maxLength?: number }) {
   return (
     <label className="flex flex-col gap-2 text-sm text-white/65">
       {label}
-      <input className="rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-base text-white outline-none focus:border-amber-400" type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+      <input
+        className="rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 text-base text-white outline-none focus:border-amber-400"
+        type={type}
+        value={value}
+        maxLength={maxLength}
+        inputMode={type === 'number' ? 'numeric' : 'text'}
+        onChange={(event) => onChange(event.target.value)}
+      />
     </label>
   );
 }
@@ -80,6 +87,32 @@ function StatCard({ label, value, valueClass, caption }: { label: string; value:
   );
 }
 
+const normalizeAdminSettings = (loaded: Partial<AdminSettings> = {}): AdminSettings => {
+  const normalizedPin = String(loaded.adminPin ?? defaults.adminPin ?? '').replace(/\D/g, '').slice(0, 4);
+
+  return {
+    ...defaults,
+    ...loaded,
+    adminPin: normalizedPin || defaults.adminPin,
+    theme: { ...defaults.theme, ...loaded.theme },
+    camera: { ...defaults.camera, ...loaded.camera },
+    printer: { ...defaults.printer, ...loaded.printer },
+    payment: { ...defaults.payment, ...loaded.payment },
+    qrScanner: {
+      enabled: loaded.qrScanner?.enabled ?? defaults.qrScanner!.enabled,
+      deviceName: loaded.qrScanner?.deviceName ?? defaults.qrScanner!.deviceName,
+    },
+    frames: {
+      customFrame: loaded.frames?.customFrame ?? defaults.frames!.customFrame,
+      defaultFrame: loaded.frames?.defaultFrame ?? defaults.frames!.defaultFrame,
+    },
+    effects: {
+      enabled: loaded.effects?.enabled ?? defaults.effects!.enabled,
+      available: loaded.effects?.available ?? defaults.effects!.available,
+    },
+  };
+};
+
 export default function Admin() {
   const navigate = useNavigate();
   const [settings, setSettings] = useState<AdminSettings>(defaults);
@@ -93,26 +126,7 @@ export default function Admin() {
 
   useEffect(() => {
     window.api.config.getSettings().then((loaded: Partial<AdminSettings>) => {
-      setSettings({
-        ...defaults,
-        ...loaded,
-        theme: { ...defaults.theme, ...loaded.theme },
-        camera: { ...defaults.camera, ...loaded.camera },
-        printer: { ...defaults.printer, ...loaded.printer },
-        payment: { ...defaults.payment, ...loaded.payment },
-        qrScanner: {
-          enabled: loaded.qrScanner?.enabled ?? defaults.qrScanner!.enabled,
-          deviceName: loaded.qrScanner?.deviceName ?? defaults.qrScanner!.deviceName,
-        },
-        frames: {
-          customFrame: loaded.frames?.customFrame ?? defaults.frames!.customFrame,
-          defaultFrame: loaded.frames?.defaultFrame ?? defaults.frames!.defaultFrame,
-        },
-        effects: {
-          enabled: loaded.effects?.enabled ?? defaults.effects!.enabled,
-          available: loaded.effects?.available ?? defaults.effects!.available,
-        },
-      });
+      setSettings(normalizeAdminSettings(loaded));
       setStatus('Ready');
     }).catch(() => setStatus('Could not load settings'));
   }, []);
@@ -148,7 +162,9 @@ export default function Admin() {
 
   const save = async () => {
     setBusy(true);
-    const result = await window.api.config.updateSettings(settings);
+    const nextSettings = normalizeAdminSettings(settings);
+    const result = await window.api.config.updateSettings(nextSettings);
+    setSettings(nextSettings);
     setStatus(result.success ? 'Settings saved' : result.error ?? 'Save failed');
     setBusy(false);
   };
@@ -463,7 +479,13 @@ export default function Admin() {
               <section className="rounded-2xl border border-white/10 bg-[#111111] p-5">
                 <h2 className="mb-4 text-xl font-bold">Security</h2>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Admin PIN" type="password" value={settings.adminPin ?? ''} onChange={(value) => update('adminPin', value)} />
+                  <Field
+                    label="Admin PIN"
+                    type="password"
+                    value={settings.adminPin ?? ''}
+                    maxLength={4}
+                    onChange={(value) => update('adminPin', value.replace(/\D/g, '').slice(0, 4))}
+                  />
                 </div>
                 <p className="mt-3 text-sm text-stone-500">PIN must be exactly 4 digits for the keypad screen.</p>
               </section>
