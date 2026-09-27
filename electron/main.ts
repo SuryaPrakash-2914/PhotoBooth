@@ -1,4 +1,6 @@
 import { app, BrowserWindow, ipcMain, screen } from 'electron';
+import { createServer, type Server } from 'http';
+import next from 'next';
 import path from 'path';
 import fs from 'fs';
 import { initCameraService, cameraService } from './camera/camera.service';
@@ -12,6 +14,8 @@ import type { PaymentRecord } from './payment/payment.types';
 
 // Keep a global reference
 let mainWindow: BrowserWindow | null = null;
+let nextServer: Server | null = null;
+let nextServerPort: number | null = null;
 
 const isDev = !app.isPackaged;
 
@@ -46,7 +50,31 @@ function fileToDataUrl(filePath: string): string | null {
   }
 }
 
-function createWindow() {
+async function startNextServer(): Promise<number> {
+  if (nextServerPort !== null) return nextServerPort;
+
+  const nextApp = next({ dev: false, dir: app.getAppPath() });
+  await nextApp.prepare();
+  const handle = nextApp.getRequestHandler();
+  nextServer = createServer((request, response) => {
+    void handle(request, response);
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    nextServer!.once('error', reject);
+    nextServer!.listen(0, '127.0.0.1', resolve);
+  });
+
+  const address = nextServer.address();
+  if (!address || typeof address === 'string') {
+    throw new Error('Could not determine the local Next.js server port');
+  }
+
+  nextServerPort = address.port;
+  return nextServerPort;
+}
+
+async function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
 
   mainWindow = new BrowserWindow({
@@ -69,7 +97,8 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    const port = await startNextServer();
+    await mainWindow.loadURL(`http://127.0.0.1:${port}`);
   }
 
   mainWindow.on('closed', () => {
@@ -85,16 +114,16 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   const settings = loadSettings();
   initCameraService(settings.camera);
   initPrinterService(settings.printer);
   initPaymentService(settings.payment);
 
-  createWindow();
+  await createWindow();
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) void createWindow();
   });
 });
 
@@ -104,6 +133,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   cameraService?.disconnect();
+  nextServer?.close();
 });
 
 // ─── IPC Handlers ────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 # NANAGRAPHY Photo Booth
 
-Offline-first Windows Photo Booth Desktop Application built with Electron + React + TypeScript + Vite + Tailwind CSS + Zustand.
+Offline-first Windows Photo Booth Desktop Application built with Next.js, Electron, React, TypeScript, Tailwind CSS, and Zustand.
 
 ## Current Status: Phase 1 (UI + Navigation + Mocks)
 
@@ -13,11 +13,10 @@ HOME → PHOTO TYPE → CAMERA → EDIT → PREVIEW → PAYMENT → PRINTING →
 ## Tech Stack
 
 - **Electron** – desktop shell & kiosk mode
-- **React 18 + TypeScript** – UI
-- **Vite** – build tooling
+- **Next.js App Router** – renderer and client-side screen navigation
+- **React 18 + TypeScript** – kiosk UI
 - **Tailwind CSS** – styling
 - **Zustand** – session state
-- **React Router** – screen navigation
 
 ## Project Structure
 
@@ -32,7 +31,8 @@ photo-booth/
 │   ├── storage/
 │   └── ...
 ├── src/
-│   ├── pages/         # All customer screens
+│   ├── app/           # Next.js App Router routes and root layout
+│   ├── screens/       # Customer and admin screen components
 │   ├── store/         # Zustand session store
 │   ├── types/
 │   └── ...
@@ -40,7 +40,7 @@ photo-booth/
 │   ├── photo-types.json
 │   ├── settings.json
 │   └── pricing.json
-└── assets/
+└── public/            # Static renderer assets
 ```
 
 ## Getting Started
@@ -49,12 +49,18 @@ photo-booth/
 # Install dependencies
 npm install
 
-# Run in development (Vite + Electron)
-npm run electron:dev
+# Run the renderer in a browser at http://localhost:5173/
+yarn dev
 
-# Or just the React UI in browser
-npm run dev
+# Run the Electron desktop app with the Next.js dev server
+yarn electron:dev
+
+# Typecheck and build the Windows installer
+yarn typecheck
+yarn build
 ```
+
+The packaged Electron app starts the production Next.js server on a private localhost port. Installer output is written to `release/`.
 
 ## Development Phases
 
@@ -76,12 +82,12 @@ All configurable data lives in `/config`:
 - `settings.json` – app behaviour, theme, timeouts
 - `pricing.json` – currency & tax settings
 
-Future Admin app will write to these same files.
+The Admin screen can update these files through Electron IPC.
 
 ## Architecture
 
 ```
-React UI  →  Preload (contextBridge)  →  Electron IPC  →  Local Services
+Next.js client UI  →  Preload (contextBridge)  →  Electron IPC  →  Local Services
                                                               ├── Camera
                                                               ├── Image
                                                               ├── Printer

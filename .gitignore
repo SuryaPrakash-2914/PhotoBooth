@@ -1,5 +1,6 @@
 node_modules
 dist
+.next
 dist-electron
 release
 *.log
@@ -13,3 +14,4 @@ logs/
 .vscode
 *.swp
 *.swo
+*.tsbuildinfo

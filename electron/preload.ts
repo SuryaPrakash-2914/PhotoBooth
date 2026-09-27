@@ -9,7 +9,7 @@ const api = {
   config: {
     getPhotoTypes: () => ipcRenderer.invoke('config:getPhotoTypes'),
     getSettings: () => ipcRenderer.invoke('config:getSettings'),
-    updateSettings: (settings: Record<string, unknown>) => ipcRenderer.invoke('config:updateSettings', settings),
+    updateSettings: (settings: object) => ipcRenderer.invoke('config:updateSettings', settings),
     backup: () => ipcRenderer.invoke('config:backup'),
   },
 
