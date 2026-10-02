@@ -27,10 +27,19 @@ export default function Camera() {
   }, [session, navigate]);
 
   // Connect to the camera once when the screen mounts.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const result = await window.api.camera.connect();
+useEffect(() => {
+  let cancelled = false;
+  const cam = window.api?.camera;
+
+  if (!cam) {
+    setErrorMessage('Camera is only available in the desktop app. Launch it through Electron.');
+    setCameraState('error');
+    return;
+  }
+
+  (async () => {
+    try {
+      const result = await cam.connect();
       if (cancelled) return;
       if (result.success) {
         setCameraState('preview');
@@ -38,13 +47,19 @@ export default function Camera() {
         setErrorMessage(result.message || 'Could not connect to camera');
         setCameraState('error');
       }
-    })();
-    return () => {
-      cancelled = true;
-      window.api.camera.disconnect();
-      if (nextCaptureTimer.current) clearTimeout(nextCaptureTimer.current);
-    };
-  }, []);
+    } catch (err) {
+      if (cancelled) return;
+      setErrorMessage(err instanceof Error ? err.message : 'Could not connect to camera');
+      setCameraState('error');
+    }
+  })();
+
+  return () => {
+    cancelled = true;
+    cam.disconnect();
+    if (nextCaptureTimer.current) clearTimeout(nextCaptureTimer.current);
+  };
+}, []);
 
   // Poll the live view while we're in the "preview" state so the operator
   // sees a real feed instead of a static placeholder (falls back to the
@@ -54,10 +69,10 @@ export default function Camera() {
       if (liveViewTimer.current) clearInterval(liveViewTimer.current);
       return;
     }
-    liveViewTimer.current = setInterval(async () => {
-      const frame = await window.api.camera.getLiveView();
-      setLiveFrame(frame);
-    }, 100);
+  liveViewTimer.current = setInterval(async () => {
+  const frame = await window.api?.camera?.getLiveView();
+  setLiveFrame(frame ?? null);
+}, 100);
     return () => {
       if (liveViewTimer.current) clearInterval(liveViewTimer.current);
     };
@@ -73,8 +88,14 @@ export default function Camera() {
 
     if (countdown <= 0) {
       setCameraState('capturing');
-      (async () => {
-        if (!session) return;
+     (async () => {
+  if (!session) return;
+  const cam = window.api?.camera;
+  if (!cam) {
+    setErrorMessage('Camera API not available');
+    setCameraState('error');
+    return;
+  }
         const result = await window.api.camera.capture(session.sessionId, currentPose);
         if (!result.success) {
           setErrorMessage(result.error || 'Capture failed');
